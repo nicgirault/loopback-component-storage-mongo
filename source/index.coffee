@@ -81,9 +81,8 @@ class MongoStorage
           container: container
           filename: filename
           mimetype: mimetype
-      self.uploadFile container, file, options
-    busboy.on 'finish', ->
-      callback()
+      self.uploadFile container, file, options, (storedFile) ->
+        callback undefined, storedFile
     req.pipe busboy
 
   uploadFile: (container, file, options, callback = (-> return)) ->
@@ -91,7 +90,7 @@ class MongoStorage
     options.mode = 'w'
     gfs = Grid @db, mongodb
     stream = gfs.createWriteStream options
-    stream.on 'close', -> callback()
+    stream.on 'close', -> callback file
     file.pipe stream
 
   getFiles: (container, callback) ->
@@ -101,7 +100,7 @@ class MongoStorage
       'metadata.container': container
     , (err, files) ->
       return callback err, files
-  
+
   removeFile: (container, filename, callback) ->
     @db.collection 'fs.files'
     .remove
